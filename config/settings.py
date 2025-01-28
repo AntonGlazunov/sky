@@ -40,6 +40,10 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'rest_framework_simplejwt',
+
+
+    'sky_api',
+    'users_api',
 ]
 
 MIDDLEWARE = [
@@ -125,7 +129,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-AUTH_USER_MODEL = 'users.User'
+AUTH_USER_MODEL = 'users_api.User'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
