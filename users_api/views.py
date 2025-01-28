@@ -1,3 +1,11 @@
-from django.shortcuts import render
-
-# Create your views here.
+# from django.shortcuts import render
+# from rest_framework.decorators import api_view
+# from rest_framework.response import Response
+#
+#
+# @api_view(['GET', 'POST'])
+# def get_temp(request):
+#     if request.method == 'POST':
+#         if
+#         return Response({"message": "Got some data!", "data": request.data})
+#     return Response({"message": "Hello, world!"})
