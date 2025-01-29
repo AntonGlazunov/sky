@@ -18,6 +18,8 @@ retry-requests = "^2.0.0"
 numpy = "^2.2.2"
 pandas = "^2.2.3"
 pillow = "^11.1.0"
+apscheduler = "^3.11.0"
+sqlalchemy = "^2.0.37"
 
 
 [build-system]

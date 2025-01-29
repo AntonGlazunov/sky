@@ -1,12 +1,11 @@
 from django.urls import path
-from rest_framework.routers import DefaultRouter
-
 from sky_api.apps import SkyApiConfig
-from sky_api.views import get_temp
+from sky_api.views import get_weather, CityCreateAPIView
 
 app_name = SkyApiConfig.name
 
 
 urlpatterns = [
-    path('test/', get_temp, name='temp'),
+    path('weather_now/', get_weather, name='weather_now'),
+    path('add_city/', CityCreateAPIView.as_view(), name='add_city')
 ]
