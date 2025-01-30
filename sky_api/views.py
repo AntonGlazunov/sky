@@ -5,9 +5,9 @@ from rest_framework.response import Response
 
 from sky_api.models import City
 from sky_api.serializers import CityCreateSerializer
-from sky_api.services import get_sky, planning_mailing
+from sky_api.services import get_sky
 
-a = City
+
 @api_view(['POST'])
 def get_weather(request):
     """Полеучение координат и вывод метеоданных"""
@@ -24,5 +24,8 @@ class CityCreateAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()
-        planning_mailing()
+
+
+class CityListAPIView(generics.ListAPIView):
+    pass
 

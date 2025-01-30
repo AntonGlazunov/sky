@@ -1,13 +1,13 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from django.core.management import BaseCommand
 
-from sky_api.services import add_forecast_in_db
+from config.settings import TIME_ZONE
+from sky_api.services import start_async_code
 
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        sh = BackgroundScheduler()
-        sh.add_job(add_forecast_in_db, 'interval', seconds=30)
-        sh.start()
-        print('Планировщик запущен')
+        scheduler = BackgroundScheduler(timezone=TIME_ZONE)
+        scheduler.add_job(start_async_code, 'interval', seconds=15)
+        scheduler.start()
