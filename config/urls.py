@@ -20,4 +20,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('sky_api.urls', namespace='ski_api')),
+    path('users/', include('users_api.urls', namespace='users_api')),
 ]

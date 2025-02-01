@@ -3,7 +3,8 @@ from django.db import models
 NULLABLE = {'blank': True, 'null': True}
 
 class City(models.Model):
-    name = models.CharField(max_length=200, verbose_name='Название', unique=True)
+    name = models.CharField(max_length=200, verbose_name='Название', **NULLABLE)
+    owner = models.ForeignKey('users_api.User', on_delete=models.CASCADE, verbose_name='Владелец', **NULLABLE)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name='широта', default=0)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name='высота', default=0)
 

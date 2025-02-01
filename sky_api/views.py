@@ -1,11 +1,13 @@
 
 from rest_framework import generics
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from sky_api.models import City, Temp
 from sky_api.serializers import CityCreateSerializer, CityListSerializer
 from sky_api.services import get_sky, get_datetime, start_async_code
+from users_api.permissions import IsOwner
 
 
 @api_view(['POST'])
@@ -22,21 +24,35 @@ def get_weather(request):
 
 class CityCreateAPIView(generics.CreateAPIView):
     serializer_class = CityCreateSerializer
+    permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        serializer.save()
-        start_async_code()
+        if City.objects.filter(owner=self.request.user.pk, name=serializer.validated_data['name']).exists():
+            return Response({"message": "Указаный город уже добавлен"})
+        else:
+            serializer.save(owner=self.request.user)
+            start_async_code()
 
 
 class CityListAPIView(generics.ListAPIView):
     serializer_class = CityListSerializer
     queryset = City.objects.all()
+    permission_classes = [IsOwner]
+
+    def get_queryset(self):
+        lesson = City.objects.filter(owner=self.request.user)
+        return lesson
+
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def get_forecast(request):
     """Полеучение координат и вывод метеоданных"""
     if request.method == 'POST':
+        user = request.user
+        if not City.objects.filter(owner=user).exists():
+            return Response({"message": "Город отсутсвует в списке пользователя"})
         city_name = request.data.get('city_name')
         params = request.data.get('param')
         city = City.objects.filter(name=city_name)
