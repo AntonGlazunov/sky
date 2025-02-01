@@ -1,17 +1,27 @@
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from sky_api.models import City, Temp
-from sky_api.serializers import CityCreateSerializer, CityListSerializer
+from sky_api.serializers import CityCreateSerializer, CityListSerializer, WeatherSerializer, WeatherResponseSerializer, \
+    ForecastSerializer, ForecastResponseSerializer
 from sky_api.services import get_sky, get_datetime, start_async_code
 from users_api.permissions import IsOwner
 
 
+@extend_schema(
+    summary="Получение текущей погоды по координатам",
+    request=WeatherSerializer,
+    responses={
+        201: WeatherResponseSerializer,
+        400: {"message": "Введите верные значения"},
+    }
+)
 @api_view(['POST'])
 def get_weather(request):
-    """Полеучение координат и вывод метеоданных"""
+    """Получение координат и вывод метеоданных"""
     if request.method == 'POST':
         if isinstance(request.data.get('latitude'), int) and isinstance(request.data.get('longitude'), int):
             latitude = float(request.data.get('latitude'))
@@ -53,6 +63,14 @@ class CityListAPIView(generics.ListAPIView):
         return lesson
 
 
+@extend_schema(
+    summary="Получение прогноза на заданное время в заданном городе",
+    request=ForecastSerializer,
+    responses={
+        201: ForecastResponseSerializer,
+        400: {},
+    }
+)
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_forecast(request):
@@ -71,13 +89,13 @@ def get_forecast(request):
                 if isinstance(params, list):
                     for param in params:
                         if param == 'temp':
-                            param_dict['Температура'] = temp_object[0].temp
+                            param_dict['temp'] = temp_object[0].temp
                         elif param == 'humidity':
-                            param_dict['Влажность'] = temp_object[0].humidity
+                            param_dict['humidity'] = temp_object[0].humidity
                         elif param == 'precipitation':
-                            param_dict['Осадки'] = temp_object[0].precipitation
+                            param_dict['precipitation'] = temp_object[0].precipitation
                         elif param == 'wind':
-                            param_dict['Скорость ветра'] = temp_object[0].wind
+                            param_dict['wind'] = temp_object[0].wind
                         else:
                             return Response({
                                 "message": f"Неверный параметр {param}, выберете параметры из списка: temp, humidity, precipitation, wind"},

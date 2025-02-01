@@ -22,7 +22,7 @@ class Temp(models.Model):
     date_time = models.DateTimeField(verbose_name='Дата и время', **NULLABLE)
     temp = models.SmallIntegerField(verbose_name='Температура', **NULLABLE)
     humidity = models.SmallIntegerField(verbose_name='`Влажность`', **NULLABLE)
-    precipitation = models.DecimalField(max_digits=2, decimal_places=1, verbose_name='Осадки', **NULLABLE)
+    precipitation = models.DecimalField(max_digits=3, decimal_places=1, verbose_name='Осадки', **NULLABLE)
     wind = models.SmallIntegerField(verbose_name='Скорость ветра', **NULLABLE)
 
     def __str__(self):
