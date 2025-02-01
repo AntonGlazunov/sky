@@ -333,5 +333,5 @@ class CityAPITestCase(APITestCase):
 
         self.assertEqual(
             response.json(),
-            {'Температура': 20}
+            {'temp': 20}
         )
