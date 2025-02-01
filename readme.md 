@@ -1,0 +1,12 @@
+Команда для запуска программы:
+
+python3 script.py
+
+Команда для запуска тестов:
+
+coverage run manage.py test
+
+
+Команда для вывода покрытия тестами:
+
+coverage report
