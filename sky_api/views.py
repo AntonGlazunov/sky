@@ -1,5 +1,4 @@
-
-from rest_framework import generics
+from rest_framework import generics, status, serializers
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -14,12 +13,18 @@ from users_api.permissions import IsOwner
 def get_weather(request):
     """Полеучение координат и вывод метеоданных"""
     if request.method == 'POST':
-        latitude = request.data.get('latitude')
-        longitude = request.data.get('longitude')
+        if isinstance(request.data.get('latitude'), int) and isinstance(request.data.get('longitude'), int):
+            latitude = float(request.data.get('latitude'))
+            longitude = float(request.data.get('longitude'))
+        else:
+            latitude = request.data.get('latitude')
+            longitude = request.data.get('longitude')
         if isinstance(latitude, float) and isinstance(longitude, float):
-            temp, press, wind = get_sky(latitude=latitude, longitude=longitude)
-            return Response({"температура": temp, "давление": press, "скорость вертра": wind})
-        return Response({"message": "Введите верные значения"})
+            if 90 >= latitude >= -90 and 180 >= longitude >= -180:
+                temp, press, wind = get_sky(latitude=latitude, longitude=longitude)
+                return Response({"температура": temp, "давление": press, "скорость ветра": wind},
+                                status=status.HTTP_200_OK)
+        return Response({"message": "Введите верные значения"}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CityCreateAPIView(generics.CreateAPIView):
@@ -27,8 +32,12 @@ class CityCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated]
 
     def perform_create(self, serializer):
-        if City.objects.filter(owner=self.request.user.pk, name=serializer.validated_data['name']).exists():
-            return Response({"message": "Указаный город уже добавлен"})
+        if not 90.0 >= float(serializer.validated_data['latitude']) >= -90.0:
+            raise serializers.ValidationError({'latitude': "значение должно быть в диапазоне -90 - 90"})
+        if not 180.0 >= float(serializer.validated_data['longitude']) >= -180.0:
+            raise serializers.ValidationError({'longitude': 'значение должно быть в диапазоне -180 - 180'})
+        if City.objects.filter(owner=self.request.user, name=serializer.validated_data['name']).exists():
+            raise serializers.ValidationError({"message": "Такой город уже добавлен в список отслеживания"})
         else:
             serializer.save(owner=self.request.user)
             start_async_code()
@@ -44,18 +53,15 @@ class CityListAPIView(generics.ListAPIView):
         return lesson
 
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def get_forecast(request):
     """Полеучение координат и вывод метеоданных"""
     if request.method == 'POST':
         user = request.user
-        if not City.objects.filter(owner=user).exists():
-            return Response({"message": "Город отсутсвует в списке пользователя"})
         city_name = request.data.get('city_name')
         params = request.data.get('param')
-        city = City.objects.filter(name=city_name)
+        city = City.objects.filter(owner=user, name=city_name)
         time_user = request.data.get('time')
         param_dict = {}
         try:
@@ -74,11 +80,14 @@ def get_forecast(request):
                             param_dict['Скорость ветра'] = temp_object[0].wind
                         else:
                             return Response({
-                                "message": f"Неверный параметр {param}, выберете параметры из списка: temp, humidity, precipitation, wind"})
+                                "message": f"Неверный параметр {param}, выберете параметры из списка: temp, humidity, precipitation, wind"},
+                                status=status.HTTP_400_BAD_REQUEST)
                 else:
-                    return Response({"message": "Пареметры нужно передать в виде списка"})
+                    return Response({"message": "Пареметры нужно передать в виде списка"},
+                                    status=status.HTTP_400_BAD_REQUEST)
             else:
-                return Response({"message": "Неверное название города"})
-            return Response(param_dict)
+                return Response({"message": "Неверное название города"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(param_dict, status=status.HTTP_200_OK)
         except ValueError:
-            return Response({"message": "Неверные данные в поле time, введите в формате ЧЧ:ММ"})
+            return Response({"message": "Неверные данные в поле time, введите в формате ЧЧ:ММ"},
+                            status=status.HTTP_400_BAD_REQUEST)
