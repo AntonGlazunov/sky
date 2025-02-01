@@ -1,4 +1,6 @@
 import asyncio
+import datetime
+
 import openmeteo_requests
 import requests_cache
 import pandas as pd
@@ -69,30 +71,46 @@ async def get_forecast(city):
     params = {
         "latitude": float(city.latitude),
         "longitude": float(city.longitude),
-        "hourly": ["temperature_2m", "relative_humidity_2m", "precipitation", "wind_speed_10m"],
+        "minutely_15": ["temperature_2m", "relative_humidity_2m", "precipitation", "wind_speed_10m"],
         "forecast_days": 1
     }
     responses = openmeteo.weather_api(url, params=params)
     response = responses[0]
-    hourly = response.Hourly()
-    hourly_temperature_2m = hourly.Variables(0).ValuesAsNumpy()
-    hourly_relative_humidity_2m = hourly.Variables(1).ValuesAsNumpy()
-    hourly_precipitation = hourly.Variables(2).ValuesAsNumpy()
-    hourly_wind_speed_10m = hourly.Variables(3).ValuesAsNumpy()
-    hourly_data = {"date": pd.date_range(
-        start=pd.to_datetime(hourly.Time(), unit="s", utc=True),
-        end=pd.to_datetime(hourly.TimeEnd(), unit="s", utc=True),
-        freq=pd.Timedelta(seconds=hourly.Interval()),
+    minutely_15 = response.Minutely15()
+    minutely_15_temperature_2m = minutely_15.Variables(0).ValuesAsNumpy()
+    minutely_15_relative_humidity_2m = minutely_15.Variables(1).ValuesAsNumpy()
+    minutely_15_precipitation = minutely_15.Variables(2).ValuesAsNumpy()
+    minutely_15_wind_speed_10m = minutely_15.Variables(3).ValuesAsNumpy()
+
+    minutely_15_data = {"date": pd.date_range(
+        start=pd.to_datetime(minutely_15.Time(), unit="s", utc=True),
+        end=pd.to_datetime(minutely_15.TimeEnd(), unit="s", utc=True),
+        freq=pd.Timedelta(seconds=minutely_15.Interval()),
         inclusive="left"
     )}
-    hourly_data["temperature_2m"] = hourly_temperature_2m
-    hourly_data["relative_humidity_2m"] = hourly_relative_humidity_2m
-    hourly_data["precipitation"] = hourly_precipitation
-    hourly_data["wind_speed_10m"] = hourly_wind_speed_10m
-    hourly_dataframe = pd.DataFrame(data=hourly_data)
+    minutely_15_data["temperature_2m"] = minutely_15_temperature_2m
+    minutely_15_data["relative_humidity_2m"] = minutely_15_relative_humidity_2m
+    minutely_15_data["precipitation"] = minutely_15_precipitation
+    minutely_15_data["wind_speed_10m"] = minutely_15_wind_speed_10m
+    minutely_15_dataframe = pd.DataFrame(data=minutely_15_data)
     """Запись результатов выполнения запроса в БД"""
-    for index, row in hourly_dataframe.iterrows():
+    for index, row in minutely_15_dataframe.iterrows():
         dict_data = {'city': city, 'date_time': row['date'], 'temp': row['temperature_2m'],
                      'humidity': row['relative_humidity_2m'], 'precipitation': row['precipitation'],
                      'wind': row['wind_speed_10m']}
         await Temp.objects.aupdate_or_create(city=city, date_time=row['date'], defaults=dict_data)
+
+
+def get_datetime(time):
+    offset = datetime.timedelta(hours=0)
+    tz = datetime.timezone(offset, name='O')
+    time_user = datetime.datetime.strptime(time, "%H:%M")
+    datetime_now = datetime.datetime.now(tz=tz)
+    minutes = time_user.minute
+    rounded_minutes = (minutes + 7) // 15 * 15
+    if rounded_minutes >= 60:
+        rounded_minutes = 0
+        time_user += datetime.timedelta(hours=1)
+    rounded_time = time_user.replace(day=datetime_now.day, month=datetime_now.month, year=datetime_now.year,
+                                     minute=rounded_minutes, second=0, microsecond=0, tzinfo=tz)
+    return rounded_time

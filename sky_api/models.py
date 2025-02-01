@@ -3,7 +3,7 @@ from django.db import models
 NULLABLE = {'blank': True, 'null': True}
 
 class City(models.Model):
-    name = models.CharField(max_length=200, verbose_name='Название', **NULLABLE)
+    name = models.CharField(max_length=200, verbose_name='Название', unique=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name='широта', default=0)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name='высота', default=0)
 
@@ -16,7 +16,7 @@ class City(models.Model):
 
 
 class Temp(models.Model):
-    city = models.ForeignKey('sky_api.City', on_delete=models.CASCADE, verbose_name='Город', **NULLABLE)
+    city = models.ForeignKey('sky_api.City', on_delete=models.CASCADE, verbose_name='Город')
     date_time = models.DateTimeField(verbose_name='Дата и время', **NULLABLE)
     temp = models.SmallIntegerField(verbose_name='Температура', default=0)
     humidity = models.SmallIntegerField(verbose_name='`Влажность`', default=0)
